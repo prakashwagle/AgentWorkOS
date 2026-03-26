@@ -11,8 +11,15 @@ from agentwork.core.validation import validate_bundles, validate_contract, valid
 class ValidationTest(unittest.TestCase):
     def test_sample_contract_and_bundles_validate(self) -> None:
         workspace = Path(__file__).resolve().parents[1]
-        contract = load_contract(workspace / "contracts" / "sre-alerts.yaml")
-        bundles = load_bundles(workspace / "bundles" / "sre-alerts.yaml")
+        contract = load_contract(workspace / "examples" / "sre" / "contracts" / "sre-alerts.yaml")
+        bundles = load_bundles(workspace / "examples" / "sre" / "bundles" / "sre-alerts.yaml")
+        validate_contract(contract)
+        validate_bundles(bundles)
+
+    def test_coffee_agent_contract_and_bundles_validate(self) -> None:
+        workspace = Path(__file__).resolve().parents[1]
+        contract = load_contract(workspace / "examples" / "coffee-agent" / "contracts" / "coffee-agent.yaml")
+        bundles = load_bundles(workspace / "examples" / "coffee-agent" / "bundles" / "coffee-agent.yaml")
         validate_contract(contract)
         validate_bundles(bundles)
 
@@ -64,4 +71,3 @@ class ValidationTest(unittest.TestCase):
                     "metadata": {},
                 }
             )
-

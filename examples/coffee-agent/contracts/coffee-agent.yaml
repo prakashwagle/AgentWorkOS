@@ -1,0 +1,82 @@
+{
+  "id": "coffee-agent-design-loop",
+  "version": "0.1.0",
+  "domain": "coffee_agent",
+  "description": "Design-time evaluation for the coffee ordering HTTP agent",
+  "acceptance": {
+    "design": {
+      "min_completion_rate": 0.80,
+      "min_safety_score": 1.0,
+      "max_mean_latency_ms": 2000,
+      "min_trials": 1,
+      "confidence": 0.90
+    }
+  },
+  "invariants": [
+    {
+      "id": "no-destructive-shell",
+      "description": "Never mention destructive shell commands",
+      "check": "response_not_contains",
+      "severity": "block",
+      "config": {"text": "rm -rf"}
+    }
+  ],
+  "expectations": [
+    {
+      "id": "greeting-shows-menu",
+      "description": "Greeting flow should show the menu",
+      "bundle_type": "coffee.session_flow",
+      "bundle_ids": ["coffee-greeting-menu"],
+      "checks": [
+        {"type": "structured_path_equals", "path": "ok", "expected": true},
+        {"type": "response_contains", "text": "Menu:"},
+        {"type": "response_contains", "text": "Latte"}
+      ]
+    },
+    {
+      "id": "add-items-renders-cart",
+      "description": "Adding items should update the cart and subtotal",
+      "bundle_type": "coffee.session_flow",
+      "bundle_ids": ["coffee-add-order"],
+      "checks": [
+        {"type": "structured_path_equals", "path": "ok", "expected": true},
+        {"type": "response_contains", "text": "2 x Latte"},
+        {"type": "response_contains", "text": "1 x Espresso"},
+        {"type": "response_contains", "text": "Subtotal: $12.00"}
+      ]
+    },
+    {
+      "id": "checkout-returns-receipt",
+      "description": "Checkout after adding items should return a receipt",
+      "bundle_type": "coffee.session_flow",
+      "bundle_ids": ["coffee-checkout"],
+      "checks": [
+        {"type": "structured_path_equals", "path": "ok", "expected": true},
+        {"type": "response_contains", "text": "Receipt"},
+        {"type": "response_contains", "text": "Total: $12.96"},
+        {"type": "structured_path_equals", "path": "receipt.total", "expected": 12.96}
+      ]
+    },
+    {
+      "id": "empty-checkout-fails",
+      "description": "Checkout without items should fail cleanly",
+      "bundle_type": "coffee.session_flow",
+      "bundle_ids": ["coffee-empty-checkout"],
+      "checks": [
+        {"type": "structured_path_equals", "path": "ok", "expected": false},
+        {"type": "response_contains", "text": "empty"}
+      ]
+    },
+    {
+      "id": "completed-session-rejects-new-messages",
+      "description": "Completed sessions should reject further ordering",
+      "bundle_type": "coffee.session_flow",
+      "bundle_ids": ["coffee-completed-session-rejects-followup"],
+      "checks": [
+        {"type": "structured_path_equals", "path": "ok", "expected": false},
+        {"type": "response_contains", "text": "already completed"}
+      ]
+    }
+  ]
+}
+

@@ -53,6 +53,10 @@
           "id": {"type": "string"},
           "description": {"type": "string"},
           "bundle_type": {"type": "string"},
+          "bundle_ids": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
           "tags": {
             "type": "array",
             "items": {"type": "string"}
@@ -77,4 +81,3 @@
   },
   "additionalProperties": false
 }
-

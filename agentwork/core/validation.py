@@ -61,6 +61,8 @@ def validate_contract(contract: dict[str, Any]) -> None:
         for key in ("id", "description", "bundle_type", "checks"):
             _ensure(key in expectation_map, f"Expectation missing required field: {key}")
         _ensure_list(expectation_map["checks"], "Expectation checks must be a list.")
+        if "bundle_ids" in expectation_map:
+            _ensure_list(expectation_map["bundle_ids"], "Expectation bundle_ids must be a list.")
 
 
 def validate_bundle(bundle: dict[str, Any]) -> None:
@@ -104,4 +106,3 @@ def validate_result(result: dict[str, Any]) -> None:
     for step in result["steps"]:
         step_map = _ensure_mapping(step, "Each step must be a mapping.")
         _ensure("name" in step_map, "Each step must include a name.")
-

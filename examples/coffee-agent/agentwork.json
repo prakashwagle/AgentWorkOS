@@ -1,0 +1,11 @@
+{
+  "name": "coffee-agent-eval-project",
+  "default_contract": "contracts/coffee-agent.yaml",
+  "default_bundles": "bundles/coffee-agent.yaml",
+  "default_adapter": "coffee_http",
+  "report_db": ".agentwork/agentwork.db",
+  "adapter_config": {
+    "base_url": "http://127.0.0.1:8080"
+  }
+}
+

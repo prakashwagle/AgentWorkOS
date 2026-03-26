@@ -2,89 +2,159 @@
 
 Agent Work OS (`agentwork`) is a design-time evaluation framework scaffold for AI agents.
 
-This repository is intentionally narrow in v0.1:
-
-- author contracts
-- author scenario bundles
-- run replay evaluations locally
-- inspect pass/fail checks and aggregate scores
-
-The current reference domain is SRE/DevOps, but the core structure is meant to stay generic.
+The framework repo contains the engine, schemas, adapters, and example templates.
+User evaluation projects should live in separate folders created by `agentwork init`.
 
 ## High-Level Flow
 
 ```mermaid
 flowchart LR
-  contract["Contract (YAML/JSON)"] --> runner["Replay Runner"]
-  bundles["Scenario Bundles"] --> runner
-  adapter["Agent Adapter"] --> runner
+  framework["Framework Repo\n(agentwork + examples)"] --> init["agentwork init"]
+  init --> project["Generated Eval Project\nagentwork.json\ncontracts/\nbundles/\n.agentwork/"]
+  project --> cli["agentwork run/report"]
+  cli --> adapter["Adapter"]
+  adapter --> agent["Target Agent"]
+  project --> runner["Replay Runner"]
   runner --> checks["Check Engine"]
   checks --> scoring["Scoring Engine"]
-  scoring --> store["SQLite Run Store"]
-  store --> cli["CLI Reports"]
-  store --> api["Optional API"]
+  scoring --> store["SQLite Run Store\n(project/.agentwork)"]
+  store --> cli
 ```
 
-## What Exists Today
+## Repository vs Project
 
-- CLI-first workflow
-- formal schemas for:
-  - contracts
-  - scenario bundles
-  - normalized agent results
-- replay runner
-- deterministic checks
-- scoring engine
-- SQLite persistence for runs
-- sample SRE contract and bundles
-- mock SRE adapter for local testing
+### Framework Repository
+
+This repository contains:
+
+- `agentwork/`: framework code
+- `examples/`: example project templates
+- `tests/`: framework tests
+- `agent-work-os-prd-short.md`: PRD draft
+- `agent-work-os-architecture.md`: architecture draft
+
+### User Evaluation Project
+
+Each user project created by `agentwork init` contains:
+
+- `agentwork.json`
+- `contracts/`
+- `bundles/`
+- `.agentwork/`
+
+You should create and edit contracts and scenarios inside the generated project, not by modifying the framework source.
 
 ## Project Layout
 
 ```text
-AWOS/
-  agentwork/
-    api/
-    cli/
-    core/
-    domains/sre_ops/
-    schemas/
-    storage/
-  bundles/
+my-eval-project/
+  agentwork.json
   contracts/
-  tests/
-  agent-work-os-prd-short.md
-  agent-work-os-architecture.md
+  bundles/
+  .agentwork/
 ```
 
-## Core Concepts
+## Quick Start
 
-### Contract
+Create a new SRE example project:
 
-A contract defines:
+```bash
+python3 -m agentwork init ./my-sre-evals --template sre
+```
 
-- expectations
-- invariants
-- design-phase thresholds
+Create a new coffee-agent example project:
 
-Current sample:
+```bash
+python3 -m agentwork init ./my-coffee-evals --template coffee-agent
+```
 
-- [contracts/sre-alerts.yaml](contracts/sre-alerts.yaml)
+Run the project:
 
-#### Contract Schema Summary
+```bash
+python3 -m agentwork run --project-dir ./my-sre-evals --trials 5
+```
+
+List reports:
+
+```bash
+python3 -m agentwork report --project-dir ./my-sre-evals list
+```
+
+Show one report:
+
+```bash
+python3 -m agentwork report --project-dir ./my-sre-evals show <run-id>
+```
+
+Import bundle data into a project:
+
+```bash
+python3 -m agentwork bundles --project-dir ./my-sre-evals import ./extra-bundles.yaml --output bundles/imported.yaml
+```
+
+## Templates
+
+Built-in templates currently include:
+
+- `sre`
+- `coffee-agent`
+
+Template files live under:
+
+- [examples/sre](examples/sre)
+- [examples/coffee-agent](examples/coffee-agent)
+
+## Coffee Agent Example
+
+There is a concrete example for the coffee ordering agent here:
+
+- GitHub: [prakashwagle/coffee-agent](https://github.com/prakashwagle/coffee-agent/tree/master)
+
+The framework includes:
+
+- coffee-agent example project template in [examples/coffee-agent](examples/coffee-agent)
+- HTTP adapter in [agentwork/domains/coffee_agent/http_adapter.py](agentwork/domains/coffee_agent/http_adapter.py)
+
+If the coffee agent is already running on `http://127.0.0.1:8080`, you can evaluate it with:
+
+```bash
+python3 -m agentwork init ./coffee-evals --template coffee-agent
+
+python3 -m agentwork run \
+  --project-dir ./coffee-evals \
+  --adapter coffee_http \
+  --base-url http://127.0.0.1:8080 \
+  --trials 1
+```
+
+## Contract, Scenario, and Result Schemas
+
+The framework formalizes three schemas:
+
+- contract schema
+- scenario bundle schema
+- normalized agent result schema
+
+Schema files live in:
+
+- [contract.schema.json](agentwork/schemas/contract.schema.json)
+- [scenario_bundle.schema.json](agentwork/schemas/scenario_bundle.schema.json)
+- [agent_result.schema.json](agentwork/schemas/agent_result.schema.json)
+
+### Contract Schema Summary
 
 A contract must define:
 
-- `id`: unique contract id
-- `version`: contract version
-- `domain`: reference domain name
-- `description`: human-readable summary
-- `acceptance.design`: design-time thresholds
-- `expectations`: list of expectation definitions
+- `id`
+- `version`
+- `domain`
+- `description`
+- `acceptance.design`
+- `expectations`
 
-Optional fields:
+Optional:
 
-- `invariants`: hard rules checked on every result
+- `invariants`
 
 Each expectation must define:
 
@@ -93,118 +163,79 @@ Each expectation must define:
 - `bundle_type`
 - `checks`
 
-#### Contract Example
+Optional expectation fields:
+
+- `bundle_ids`: restrict an expectation to specific scenario ids
+- `tags`
+- `llm_judge`
+- `origin`
+
+### Contract Example
 
 ```json
 {
-  "id": "sre-design-loop",
+  "id": "coffee-agent-design-loop",
   "version": "0.1.0",
-  "domain": "sre_ops",
-  "description": "Design-time evaluation for SRE workflows",
+  "domain": "coffee_agent",
+  "description": "Design-time evaluation for the coffee ordering HTTP agent",
   "acceptance": {
     "design": {
-      "min_completion_rate": 0.60,
+      "min_completion_rate": 0.80,
       "min_safety_score": 1.0,
-      "max_mean_latency_ms": 800,
-      "min_trials": 5,
+      "max_mean_latency_ms": 2000,
+      "min_trials": 1,
       "confidence": 0.90
     }
   },
-  "invariants": [
-    {
-      "id": "no-destructive-shell",
-      "description": "Never suggest destructive shell commands",
-      "check": "response_not_contains",
-      "severity": "block",
-      "config": {
-        "text": "rm -rf"
-      }
-    }
-  ],
   "expectations": [
     {
-      "id": "alert-triage",
-      "description": "Classify alert severity and service correctly",
-      "bundle_type": "sre.alert_triage",
+      "id": "checkout-returns-receipt",
+      "description": "Checkout after adding items should return a receipt",
+      "bundle_type": "coffee.session_flow",
+      "bundle_ids": ["coffee-checkout"],
       "checks": [
-        {"type": "custom", "name": "severity_correct"},
-        {"type": "required_tools_called"},
-        {"type": "required_steps_completed"}
+        {"type": "structured_path_equals", "path": "ok", "expected": true},
+        {"type": "response_contains", "text": "Receipt"},
+        {"type": "structured_path_equals", "path": "receipt.total", "expected": 12.96}
       ]
     }
   ]
 }
 ```
 
-### Scenario Bundle
-
-A scenario bundle is one replayable test input. It contains:
-
-- prompt
-- context
-- expected outputs
-- optional execution requirements such as:
-  - required tools
-  - forbidden tools
-  - required steps
-  - forbidden actions
-
-Current sample:
-
-- [bundles/sre-alerts.yaml](bundles/sre-alerts.yaml)
-
-#### Scenario Schema Summary
+### Scenario Bundle Schema Summary
 
 Each scenario bundle must define:
 
-- `id`: unique scenario id
-- `bundle_type`: category matched by contract expectations
-- `prompt`: input prompt passed to the agent
-- `context`: structured scenario context
-- `expected`: expected output fields used by checks
+- `id`
+- `bundle_type`
+- `prompt`
+- `context`
+- `expected`
 
-Optional fields:
+Optional:
 
-- `metadata`: freeform metadata
-- `requirements.required_tools`: tools the agent must call
-- `requirements.forbidden_tools`: tools the agent must not call
-- `requirements.required_steps`: intermediate steps the agent must perform
-- `requirements.forbidden_actions`: actions the agent must not propose
+- `metadata`
+- `requirements.required_tools`
+- `requirements.forbidden_tools`
+- `requirements.required_steps`
+- `requirements.forbidden_actions`
 
-#### Scenario Example
+### Scenario Example
 
 ```json
 {
-  "id": "runbook-api-latency-001",
-  "bundle_type": "sre.runbook_recommendation",
-  "prompt": "Choose the next safe operator action.",
+  "id": "coffee-checkout",
+  "bundle_type": "coffee.session_flow",
+  "prompt": "Start a coffee ordering session, add items, then checkout.",
   "context": {
-    "alert": {
-      "service": "api",
-      "severity": "high",
-      "signal": "latency p95 > 1s"
-    }
+    "messages": ["2 lattes and 1 espresso", "checkout"]
   },
-  "expected": {
-    "service": "api",
-    "runbook_id": "rb-api-latency"
-  },
-  "requirements": {
-    "required_tools": ["lookup_runbook"],
-    "forbidden_tools": ["restart_cluster"],
-    "required_steps": ["identify_service", "lookup_runbook"],
-    "forbidden_actions": [
-      "restart the whole cluster",
-      "delete the namespace"
-    ]
-  },
-  "metadata": {
-    "mock_variant": "intermittent_missing_runbook"
-  }
+  "expected": {}
 }
 ```
 
-### Normalized Agent Result
+### Result Schema Summary
 
 Every adapter must return:
 
@@ -216,127 +247,113 @@ Every adapter must return:
 - `latency_ms`
 - `metadata`
 
-Schema files live in:
-
-- [contract.schema.json](agentwork/schemas/contract.schema.json)
-- [scenario_bundle.schema.json](agentwork/schemas/scenario_bundle.schema.json)
-- [agent_result.schema.json](agentwork/schemas/agent_result.schema.json)
-
-#### Result Schema Summary
-
-Every adapter must return a normalized result with:
-
-- `response`: final natural language output
-- `structured`: structured output used by deterministic checks
-- `tool_calls`: tool invocations made by the agent
-- `steps`: intermediate reasoning or workflow steps completed by the agent
-- `usage`: token and cost metadata
-- `latency_ms`: runtime latency
-- `metadata`: freeform raw or debugging metadata
-
-#### Result Example
+### Result Example
 
 ```json
 {
-  "response": "Use the service runbook and inspect recent deploys before any restart.",
+  "response": "Receipt order-123:\nTotal: $12.96",
   "structured": {
-    "service": "api",
-    "runbook_id": "rb-api-latency"
+    "ok": true,
+    "receipt": {
+      "total": 12.96
+    }
   },
-  "tool_calls": [
-    {"name": "lookup_runbook"}
-  ],
+  "tool_calls": [],
   "steps": [
-    {"name": "identify_service", "status": "completed"},
-    {"name": "lookup_runbook", "status": "completed"}
+    {"name": "start_session", "status": "completed"},
+    {"name": "send_message", "status": "completed", "detail": "2 lattes and 1 espresso"},
+    {"name": "send_message", "status": "completed", "detail": "checkout"}
   ],
-  "usage": {
-    "prompt_tokens": 120,
-    "completion_tokens": 80,
-    "total_tokens": 200,
-    "cost_usd": 0.002
-  },
-  "latency_ms": 350,
+  "usage": {},
+  "latency_ms": 125,
   "metadata": {
-    "mock_variant": "good"
+    "base_url": "http://127.0.0.1:8080"
   }
 }
 ```
 
-## How The Framework Works
+## How To Create A New Eval Project
 
-The runtime loop is:
+1. Create a project with `agentwork init`.
+2. Edit `contracts/*.yaml` to define expectations and invariants.
+3. Edit `bundles/*.yaml` to define replayable scenarios.
+4. Choose an adapter:
+   - `mock_sre`
+   - `coffee_http`
+   - future adapters
+5. Run evaluations with `agentwork run --project-dir ...`.
+6. Inspect results with `agentwork report`.
 
-1. Load contract
-2. Load scenario bundles
-3. Call adapter for each trial
-4. Validate normalized result schema
-5. Run invariant checks
-6. Run expectation checks
-7. Aggregate scores
-8. Persist run to SQLite
+## Adapters
 
-The two most important runtime components are:
+Adapters are intentionally thin. They do not own eval logic.
 
-- check engine: trial-level pass/fail for each check
-- scoring engine: aggregate summary across trials
+They only:
+
+- invoke the target agent
+- normalize native outputs into the result schema
+
+Current adapters:
+
+- [MockSREAdapter](agentwork/domains/sre_ops/mock_adapter.py)
+- [CoffeeAgentHTTPAdapter](agentwork/domains/coffee_agent/http_adapter.py)
 
 ## Current CLI
 
-The CLI is the primary interface for MVP.
-
-Initialize the workspace:
+Initialize a project:
 
 ```bash
-python3 -m agentwork init
+python3 -m agentwork init ./my-project --template sre
 ```
 
-Run the sample evaluation:
+Run evaluations:
 
 ```bash
-python3 -m agentwork run --trials 5
+python3 -m agentwork run --project-dir ./my-project --trials 5
 ```
 
-Run only one expectation:
+Override contract or bundles:
 
 ```bash
-python3 -m agentwork run --only alert-triage
+python3 -m agentwork run \
+  --project-dir ./my-project \
+  --contract contracts/custom.yaml \
+  --bundles bundles/custom.yaml
 ```
 
-List saved reports:
+Use the coffee HTTP adapter:
 
 ```bash
-python3 -m agentwork report list
+python3 -m agentwork run \
+  --project-dir ./coffee-evals \
+  --adapter coffee_http \
+  --base-url http://127.0.0.1:8080 \
+  --trials 1
+```
+
+List reports:
+
+```bash
+python3 -m agentwork report --project-dir ./my-project list
 ```
 
 Show one report:
 
 ```bash
-python3 -m agentwork report show <run-id>
+python3 -m agentwork report --project-dir ./my-project show <run-id>
 ```
 
-Import bundle data into the local workspace:
+Import bundles:
 
 ```bash
-python3 -m agentwork bundles import bundles/sre-alerts.yaml --output bundles/imported.yaml
+python3 -m agentwork bundles --project-dir ./my-project import ./extra.yaml --output bundles/extra.yaml
 ```
-
-## What The Sample Scaffold Uses
-
-The sample run uses:
-
-- [agentwork/cli/main.py](agentwork/cli/main.py)
-- [agentwork/core/runner.py](agentwork/core/runner.py)
-- [agentwork/core/checks.py](agentwork/core/checks.py)
-- [agentwork/core/scoring.py](agentwork/core/scoring.py)
-- [agentwork/core/validation.py](agentwork/core/validation.py)
-- [agentwork/domains/sre_ops/mock_adapter.py](agentwork/domains/sre_ops/mock_adapter.py)
 
 ## Optional Dependencies
 
-The current scaffold is stdlib-runnable.
+The scaffold is stdlib-runnable.
 
-The `pyproject.toml` also defines a future `full` extra for:
+The `full` extra is reserved for a richer future stack:
 
 - FastAPI
 - Pydantic
@@ -344,7 +361,7 @@ The `pyproject.toml` also defines a future `full` extra for:
 - Typer
 - Uvicorn
 
-If you want that full stack later:
+Install later if needed:
 
 ```bash
 pip install -e ".[full]"
@@ -356,28 +373,18 @@ pip install -e ".[full]"
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-## Recommended Next Step
-
-Replace the mock adapter with a real agent adapter.
-
-The clean path is:
-
-1. keep the schemas fixed
-2. add a real `FunctionAdapter` or `HTTPAdapter`
-3. normalize the real agent output into the result schema
-4. improve CLI report formatting
-
 ## Status
 
-This is an MVP scaffold, not a complete framework.
+This is still an MVP framework scaffold.
 
-It is currently optimized for:
+Optimized for:
 
 - design-time evaluation
 - offline replay
 - local iteration
+- project scaffolding
 
-It is not yet optimized for:
+Not yet optimized for:
 
 - CI gating
 - production feedback ingestion

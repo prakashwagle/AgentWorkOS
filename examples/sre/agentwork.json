@@ -1,0 +1,8 @@
+{
+  "name": "sre-eval-project",
+  "default_contract": "contracts/sre-alerts.yaml",
+  "default_bundles": "bundles/sre-alerts.yaml",
+  "default_adapter": "mock_sre",
+  "report_db": ".agentwork/agentwork.db"
+}
+

@@ -35,6 +35,9 @@ def run_contract(
         if selected and expectation["id"] not in selected:
             continue
         matching_bundles = by_type.get(expectation["bundle_type"], [])
+        bundle_ids = set(expectation.get("bundle_ids", []))
+        if bundle_ids:
+            matching_bundles = [bundle for bundle in matching_bundles if bundle["id"] in bundle_ids]
         expectation_trials: list[dict[str, Any]] = []
         for bundle in matching_bundles:
             for trial_index in range(config["trials"]):

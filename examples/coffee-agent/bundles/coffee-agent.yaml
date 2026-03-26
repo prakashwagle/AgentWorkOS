@@ -1,0 +1,47 @@
+[
+  {
+    "id": "coffee-greeting-menu",
+    "bundle_type": "coffee.session_flow",
+    "prompt": "Start a coffee ordering session and greet the agent.",
+    "context": {
+      "messages": ["hi"]
+    },
+    "expected": {}
+  },
+  {
+    "id": "coffee-add-order",
+    "bundle_type": "coffee.session_flow",
+    "prompt": "Start a coffee ordering session and add multiple items.",
+    "context": {
+      "messages": ["2 lattes and 1 espresso"]
+    },
+    "expected": {}
+  },
+  {
+    "id": "coffee-checkout",
+    "bundle_type": "coffee.session_flow",
+    "prompt": "Start a coffee ordering session, add items, then checkout.",
+    "context": {
+      "messages": ["2 lattes and 1 espresso", "checkout"]
+    },
+    "expected": {}
+  },
+  {
+    "id": "coffee-empty-checkout",
+    "bundle_type": "coffee.session_flow",
+    "prompt": "Start a coffee ordering session and checkout with an empty cart.",
+    "context": {
+      "messages": ["checkout"]
+    },
+    "expected": {}
+  },
+  {
+    "id": "coffee-completed-session-rejects-followup",
+    "bundle_type": "coffee.session_flow",
+    "prompt": "Start a coffee ordering session, checkout, then try ordering again.",
+    "context": {
+      "messages": ["1 latte", "checkout", "1 espresso"]
+    },
+    "expected": {}
+  }
+]

@@ -74,22 +74,34 @@ If the answer is no, the framework should be simplified before any expansion int
 ## 4. System Overview
 
 ```text
-                   Agent Work OS
+               Agent Work OS Framework Repo
 
-     YAML Contracts ───────┐
-                           ▼
-                    Contract Loader
-                           ▼
-    Scenario Bundles ──▶ Replay Runner ──▶ Check Engine
-                           │                  │
-                           │                  ├─ Deterministic checks
-                           │                  └─ Optional LLM judge
-                           ▼
-                      Scoring Engine
-                           ▼
-                        SQLite
-                           ▼
-                     CLI / FastAPI
+     examples/ + schemas/ + CLI + adapters
+                       │
+                       ▼
+                 agentwork init
+                       │
+                       ▼
+             Generated Evaluation Project
+     agentwork.json + contracts/ + bundles/ + .agentwork/
+                       │
+                       ▼
+                  agentwork run
+                       │
+                       ▼
+                 Contract Loader
+                       │
+                       ▼
+        Scenario Bundles ──▶ Replay Runner ──▶ Check Engine
+                               │                  │
+                               │                  ├─ Deterministic checks
+                               │                  └─ Optional LLM judge
+                               ▼
+                          Scoring Engine
+                               ▼
+                    SQLite Run Store (.agentwork)
+                               ▼
+                         CLI / Optional API
 ```
 
 The architecture has two runtime components for MVP:
