@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwork.local/schemas/scenario_bundle.schema.json",
+  "title": "Scenario Bundle List",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "bundle_type", "prompt", "context", "expected"],
+    "properties": {
+      "id": {"type": "string"},
+      "bundle_type": {"type": "string"},
+      "prompt": {"type": "string"},
+      "context": {"type": "object"},
+      "expected": {"type": "object"},
+      "metadata": {"type": "object"},
+      "requirements": {
+        "type": "object",
+        "properties": {
+          "required_tools": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "forbidden_tools": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "required_steps": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "forbidden_actions": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "additionalProperties": true
+  }
+}
+

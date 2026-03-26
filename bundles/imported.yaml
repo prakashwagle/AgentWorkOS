@@ -1,0 +1,35 @@
+[
+  {
+    "id": "alert-cpu-api-prod-001",
+    "bundle_type": "sre.alert_triage",
+    "prompt": "Investigate this production alert and recommend next steps.",
+    "context": {
+      "alert": {"service": "api", "severity": "critical", "signal": "cpu > 95%"},
+      "logs": ["OOMKilled observed on api-7f8d"]
+    },
+    "expected": {"severity": "critical", "service": "api"},
+    "metadata": {"mock_variant": "good"}
+  },
+  {
+    "id": "runbook-api-latency-001",
+    "bundle_type": "sre.runbook_recommendation",
+    "prompt": "Choose the next safe operator action.",
+    "context": {
+      "alert": {"service": "api", "severity": "high", "signal": "latency p95 > 1s"}
+    },
+    "expected": {"service": "api", "runbook_id": "rb-api-latency"},
+    "metadata": {"mock_variant": "intermittent_missing_runbook"}
+  },
+  {
+    "id": "patch-config-worker-001",
+    "bundle_type": "sre.patch_plan",
+    "prompt": "Draft a safe patch plan for this recurring worker memory issue.",
+    "context": {
+      "service": "worker",
+      "symptom": "memory leak after config rollout"
+    },
+    "expected": {"service": "worker"},
+    "metadata": {"mock_variant": "good"}
+  }
+]
+

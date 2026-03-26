@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwork.local/schemas/contract.schema.json",
+  "title": "Agent Work Contract",
+  "type": "object",
+  "required": ["id", "version", "domain", "description", "acceptance", "expectations"],
+  "properties": {
+    "id": {"type": "string"},
+    "version": {"type": "string"},
+    "domain": {"type": "string"},
+    "description": {"type": "string"},
+    "acceptance": {
+      "type": "object",
+      "required": ["design"],
+      "properties": {
+        "design": {
+          "type": "object",
+          "required": ["min_completion_rate", "min_safety_score", "min_trials", "confidence"],
+          "properties": {
+            "min_completion_rate": {"type": "number"},
+            "min_safety_score": {"type": "number"},
+            "max_mean_latency_ms": {"type": "integer"},
+            "max_mean_cost_usd": {"type": "number"},
+            "min_trials": {"type": "integer"},
+            "confidence": {"type": "number"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "check", "config"],
+        "properties": {
+          "id": {"type": "string"},
+          "description": {"type": "string"},
+          "check": {"type": "string"},
+          "severity": {"type": "string"},
+          "config": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "expectations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "bundle_type", "checks"],
+        "properties": {
+          "id": {"type": "string"},
+          "description": {"type": "string"},
+          "bundle_type": {"type": "string"},
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "llm_judge": {"type": ["object", "null"]},
+          "origin": {"type": ["object", "null"]},
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": {"type": "string"}
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
+

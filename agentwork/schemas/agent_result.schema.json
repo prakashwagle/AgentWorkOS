@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwork.local/schemas/agent_result.schema.json",
+  "title": "Normalized Agent Result",
+  "type": "object",
+  "required": ["response", "structured", "tool_calls", "steps", "usage", "latency_ms", "metadata"],
+  "properties": {
+    "response": {"type": "string"},
+    "structured": {"type": "object"},
+    "tool_calls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string"},
+          "arguments": {"type": "object"},
+          "result": {},
+          "duration_ms": {"type": "integer"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string"},
+          "status": {"type": "string"},
+          "detail": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "prompt_tokens": {"type": "integer"},
+        "completion_tokens": {"type": "integer"},
+        "total_tokens": {"type": "integer"},
+        "cost_usd": {"type": "number"}
+      },
+      "additionalProperties": true
+    },
+    "latency_ms": {"type": "integer"},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": true
+}
