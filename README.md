@@ -170,6 +170,12 @@ Optional expectation fields:
 - `llm_judge`
 - `origin`
 
+Terminology:
+
+- `Contract` = Eval Suite
+- `Expectation` = Assertion Rule
+- `Scenario Bundle` = Test Case
+
 ### Contract Example
 
 ```json
@@ -221,6 +227,11 @@ Optional:
 - `requirements.required_steps`
 - `requirements.forbidden_actions`
 
+Mental model:
+
+- scenario bundle = test case
+- expectation = assertion rule applied to one or more test cases
+
 ### Scenario Example
 
 ```json
@@ -234,6 +245,153 @@ Optional:
   "expected": {}
 }
 ```
+
+### Matching Expectation For This Scenario
+
+```json
+{
+  "id": "checkout-returns-receipt",
+  "description": "Checkout after adding items should return a receipt",
+  "bundle_type": "coffee.session_flow",
+  "bundle_ids": ["coffee-checkout"],
+  "checks": [
+    {"type": "structured_path_equals", "path": "ok", "expected": true},
+    {"type": "response_contains", "text": "Receipt"},
+    {"type": "response_contains", "text": "Total: $12.96"},
+    {"type": "structured_path_equals", "path": "receipt.total", "expected": 12.96}
+  ]
+}
+```
+
+### How Contract, Expectation, and Scenario Relate
+
+Think of the model like this:
+
+- `scenario bundle` = one concrete test case
+- `expectation` = one assertion rule
+- `contract` = a collection of expectation rules, invariants, and thresholds
+
+The runner binds them in two steps:
+
+1. match scenarios by `bundle_type`
+2. optionally narrow with `bundle_ids`
+
+For example:
+
+- scenario id: `coffee-checkout`
+- bundle type: `coffee.session_flow`
+- expectation bundle type: `coffee.session_flow`
+- expectation bundle ids: `["coffee-checkout"]`
+
+That means the `checkout-returns-receipt` expectation is only applied to the `coffee-checkout` scenario.
+
+### What `expected` In A Scenario Means
+
+`expected` is scenario-local reference data.
+
+It is not automatically the final pass/fail result by itself.
+
+It is useful for:
+
+- custom checks
+- domain-specific checks
+- reference values that belong to the scenario more than the contract
+
+In the current scaffold, some checks embed expected values directly in the contract, for example:
+
+- `{"type": "structured_path_equals", "path": "receipt.total", "expected": 12.96}`
+
+That works, but it can feel repetitive.
+
+So the current rule is:
+
+- use `scenario.expected` for per-scenario reference facts
+- use `contract.expectation.checks` for actual assertions
+
+For the coffee agent example, `expected` is empty because the checks currently hardcode the values they care about inside the contract.
+
+### Why Checks Live Under Expectations
+
+Checks live under expectations because an expectation is the unit of assertion.
+
+That means:
+
+- scenario = what to run
+- expectation = what to assert
+
+This is similar to other frameworks where:
+
+- dataset row / testcase contains inputs
+- evaluator / scorer contains logic
+
+In AWOS, `expectation` plays the role closest to an evaluator rule, while `contract` is the larger eval spec that groups many expectations together.
+
+### Can The Contract Check The Path The Agent Takes?
+
+Yes, but only if that path is observable in the normalized result.
+
+Today the contract can check:
+
+- tool calls
+- forbidden tools
+- required steps
+- forbidden actions in the response
+- latency
+- token usage
+- structured result fields
+
+It cannot directly inspect hidden internal reasoning or invisible loops.
+
+So if you want to check process behavior, the adapter must expose it in the normalized result, for example:
+
+- `tool_calls`
+- `steps`
+- `usage`
+- extra metadata
+
+This means the contract can validate observable execution behavior, but not opaque internal behavior.
+
+### Coffee Agent Side-By-Side Example
+
+Scenario:
+
+```json
+{
+  "id": "coffee-checkout",
+  "bundle_type": "coffee.session_flow",
+  "prompt": "Start a coffee ordering session, add items, then checkout.",
+  "context": {
+    "messages": ["2 lattes and 1 espresso", "checkout"]
+  },
+  "expected": {}
+}
+```
+
+Matching expectation:
+
+```json
+{
+  "id": "checkout-returns-receipt",
+  "description": "Checkout after adding items should return a receipt",
+  "bundle_type": "coffee.session_flow",
+  "bundle_ids": ["coffee-checkout"],
+  "checks": [
+    {"type": "structured_path_equals", "path": "ok", "expected": true},
+    {"type": "response_contains", "text": "Receipt"},
+    {"type": "response_contains", "text": "Total: $12.96"},
+    {"type": "structured_path_equals", "path": "receipt.total", "expected": 12.96}
+  ]
+}
+```
+
+What happens at runtime:
+
+1. the adapter starts a coffee-agent session
+2. it sends `"2 lattes and 1 espresso"`
+3. it sends `"checkout"`
+4. it returns the final normalized result
+5. AWOS runs those four checks
+6. the expectation passes or fails for that scenario
 
 ### Result Schema Summary
 
