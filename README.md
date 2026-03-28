@@ -242,7 +242,11 @@ Mental model:
   "context": {
     "messages": ["2 lattes and 1 espresso", "checkout"]
   },
-  "expected": {}
+  "expected": {
+    "ok": true,
+    "receipt_total": 12.96,
+    "contains": ["Receipt", "Total: $12.96"]
+  }
 }
 ```
 
