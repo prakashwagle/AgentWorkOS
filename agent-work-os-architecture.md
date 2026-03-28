@@ -92,10 +92,13 @@ If the answer is no, the framework should be simplified before any expansion int
                  Contract Loader
                        │
                        ▼
-        Scenario Bundles ──▶ Replay Runner ──▶ Check Engine
-                               │                  │
-                               │                  ├─ Deterministic checks
-                               │                  └─ Optional LLM judge
+        Scenario Bundles ──▶ Replay Runner ──▶ Adapter ──▶ Target Agent
+                               │
+                               ▼
+                          Check Engine
+                               │
+                               ├─ Deterministic checks
+                               └─ Optional LLM judge
                                ▼
                           Scoring Engine
                                ▼

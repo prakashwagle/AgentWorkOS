@@ -11,10 +11,11 @@ User evaluation projects should live in separate folders created by `agentwork i
 flowchart LR
   framework["Framework Repo\n(agentwork + examples)"] --> init["agentwork init"]
   init --> project["Generated Eval Project\nagentwork.json\ncontracts/\nbundles/\n.agentwork/"]
-  project --> cli["agentwork run/report"]
-  cli --> adapter["Adapter"]
+  project --> cli["agentwork CLI\nrun/report"]
+  cli --> runner["Replay Runner"]
+  project --> runner
+  runner --> adapter["Adapter"]
   adapter --> agent["Target Agent"]
-  project --> runner["Replay Runner"]
   runner --> checks["Check Engine"]
   checks --> scoring["Scoring Engine"]
   scoring --> store["SQLite Run Store\n(project/.agentwork)"]
